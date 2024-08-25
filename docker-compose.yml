@@ -1,0 +1,90 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  db-postgres:
+    image: postgres:13
+    container_name: cursos-microservice-db
+    restart: always
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+    networks:
+      - angular-spring-microservices
+    volumes:
+      - ./DockerPostgre/Data:/var/lib/postgresql/data
+
+  # MySQL Database
+  db-mysql:
+    image: mysql:8
+    container_name: usuario-microservice-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 12345
+      MYSQL_DATABASE: appdb
+    networks:
+      - angular-spring-microservices
+    volumes:
+      - ./DockerMysql/Data/usuarios:/var/lib/mysql
+
+  # First microservice using MySQL
+  msvc-usuarios:
+    image: beemila666/usuario-microservice:latest
+    container_name: usuario-microservice
+    restart: always
+    environment:
+      DB_NAME: appdb
+      DB_USER: root
+      DB_PASS: 12345
+      APP_PORT: 8001
+    ports:
+      - "8001:8001"
+    depends_on:
+      - db-mysql
+    networks:
+      - angular-spring-microservices
+
+  # Second microservice using PostgreSQL
+  msvc-cursos:
+    image: beemila666/curso-microservice:latest
+    container_name: cursos-microservice
+    restart: always
+    environment:
+      DB_NAME: appdb
+      DB_USER: postgres
+      DB_PASS: 12345
+      APP_PORT: 8002
+    ports:
+      - "8002:8002"
+    depends_on:
+      - db-postgres
+    networks:
+      - angular-spring-microservices
+
+  #Fuzz test
+  fuzz:
+    build:
+      context: ./FuzzTest
+      dockerfile: Dockerfile
+    depends_on:
+      - msvc-cursos
+      - msvc-usuarios
+    volumes:
+      - ./FuzzTest/fuzz_test_logs:/logs
+    networks:
+      - angular-spring-microservices
+
+  # Angular front-end
+  angular-app:
+    image: beemila666/front-microservice:latest
+    container_name: angular-app
+    restart: always
+    ports:
+      - "4200:80"
+    networks:
+      - angular-spring-microservices
+
+networks:
+  angular-spring-microservices:
+    driver: bridge
