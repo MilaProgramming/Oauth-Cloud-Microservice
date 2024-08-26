@@ -1,0 +1,16 @@
+_format_version: "2.1"
+
+services:
+  - name: usuarios
+    url: http://msvc-usuarios:8001
+    routes:
+      - name: usuarios-route
+        paths:
+          - /api/usuarios
+
+  - name: cursos
+    url: http://msvc-cursos:8002
+    routes:
+      - name: cursos-route
+        paths:
+          - /cursos
