@@ -38,10 +38,12 @@ services:
       DB_USER: root
       DB_PASS: 12345
       APP_PORT: 8001
+      KEYCLOAK_HOST: http://keycloak-service
     ports:
       - "8001:8001"
     depends_on:
       - db-mysql
+      - keycloak-service
     networks:
       - angular-spring-microservices
 
@@ -55,28 +57,12 @@ services:
       DB_USER: postgres
       DB_PASS: 12345
       APP_PORT: 8002
+      KEYCLOAK_HOST: http://keycloak-service
     ports:
       - "8002:8002"
     depends_on:
       - db-postgres
-    networks:
-      - angular-spring-microservices
-
-    # Kong API Gateway
-  kong:
-    image: kong:latest
-    container_name: api-gateway
-    restart: always
-    environment:
-      KONG_DATABASE: "off"
-      KONG_DECLARATIVE_CONFIG: /kong/kong.yml
-    ports:
-      - "8000:8000" # Public
-      - "8443:8443" # Public SSL
-      - "8011:8011" # Admin API
-      - "8444:8444" # Admin API SSL
-    volumes:
-      - ./DockerKong/kong.yml:/kong/kong.yml
+      - keycloak-service
     networks:
       - angular-spring-microservices
 
@@ -87,6 +73,23 @@ services:
     restart: always
     ports:
       - "4200:80"
+    networks:
+      - angular-spring-microservices
+
+  # Keycloak service
+  keycloak-service:
+    container_name: keycloak-service
+    hostname: keycloak-service
+    image: quay.io/keycloak/keycloak:21.0.1
+    ports:
+      - "8080:8080"
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+    volumes:
+      - ./DockerKeyloack/keycloak_data:/opt/keycloak/data
+    command:
+      - start-dev
     networks:
       - angular-spring-microservices
 
